@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>The source code</title>
+  <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+  <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+  <style type="text/css">
+    .highlight { display: block; background-color: #ddd; }
+  </style>
+  <script type="text/javascript">
+    function highlight() {
+      document.getElementById(location.hash.replace(/#/, "")).className = "highlight";
+    }
+  </script>
+</head>
+<body onload="prettyPrint(); highlight();">
+  <pre class="prettyprint lang-js"><span id='oo-EventEmitter-method-constructor'><span id='oo-EventEmitter'>/**
+</span></span> * Event emitter.
+ *
+ * @class
+ * @constructor
+ * @property {Object} bindings
+ */
+oo.EventEmitter = function OoEventEmitter() {
+	// Properties
+	this.bindings = {};
+};
+
+/* Methods */
+
+<span id='oo-EventEmitter-method-emit'>/**
+</span> * Emit an event.
+ *
+ * @method
+ * @param {string} event Type of event
+ * @param {Mixed} args First in a list of variadic arguments passed to event handler (optional)
+ * @returns {boolean} If event was handled by at least one listener
+ */
+oo.EventEmitter.prototype.emit = function ( event ) {
+	var i, len, binding, bindings, args;
+
+	if ( event in this.bindings ) {
+		// Slicing ensures that we don&#39;t get tripped up by event handlers that add/remove bindings
+		bindings = this.bindings[event].slice();
+		args = Array.prototype.slice.call( arguments, 1 );
+		for ( i = 0, len = bindings.length; i &lt; len; i++ ) {
+			binding = bindings[i];
+			binding.callback.apply(
+				binding.context,
+				binding.args ? binding.args.concat( args ) : args
+			);
+		}
+		return true;
+	}
+	return false;
+};
+
+<span id='oo-EventEmitter-method-on'>/**
+</span> * Add a listener to events of a specific event.
+ *
+ * @method
+ * @param {string} event Type of event to listen to
+ * @param {Function} callback Function to call when event occurs
+ * @param {Array} [args] Arguments to pass to listener, will be prepended to emitted arguments
+ * @param {Object} [context=null] Object to use as context for callback function or call method on
+ * @throws {Error} Listener argument is not a function or method name
+ * @chainable
+ */
+oo.EventEmitter.prototype.on = function ( event, callback, args, context ) {
+	// Validate callback
+	if ( typeof callback !== &#39;function&#39; ) {
+		throw new Error( &#39;Invalid callback. Function or method name expected.&#39; );
+	}
+
+	// Auto-initialize binding
+	if ( !( event in this.bindings ) ) {
+		this.bindings[event] = [];
+	}
+
+	// Add binding
+	this.bindings[event].push( {
+		&#39;callback&#39;: callback,
+		&#39;args&#39;: args,
+		&#39;context&#39;: context || null
+	} );
+	return this;
+};
+
+<span id='oo-EventEmitter-method-off'>/**
+</span> * Remove a specific listener from a specific event.
+ *
+ * @method
+ * @param {string} event Type of event to remove listener from
+ * @param {Function} [callback] Listener to remove, omit to remove all
+ * @chainable
+ * @throws {Error} Listener argument is not a function
+ */
+oo.EventEmitter.prototype.off = function ( event, callback ) {
+	var i, bindings;
+
+	if ( arguments.length === 1 ) {
+		// Remove all bindings for event
+		if ( event in this.bindings ) {
+			delete this.bindings[event];
+		}
+	} else {
+		if ( typeof callback !== &#39;function&#39; ) {
+			throw new Error( &#39;Invalid callback. Function expected.&#39; );
+		}
+		if ( !( event in this.bindings ) || !this.bindings[event].length ) {
+			// No matching bindings
+			return this;
+		}
+		// Remove matching handlers
+		bindings = this.bindings[event];
+		i = bindings.length;
+		while ( i-- ) {
+			if ( bindings[i].callback === callback ) {
+				bindings.splice( i, 1 );
+			}
+		}
+		// Cleanup if now empty
+		if ( bindings.length === 0 ) {
+			delete this.bindings[event];
+		}
+	}
+	return this;
+};
+
+<span id='oo-EventEmitter-method-connect'>/**
+</span> * Connect event handlers to an object.
+ *
+ * @method
+ * @param {Object} context Object to call methods on when events occur
+ * @param {Object.&lt;string,string&gt;|Object.&lt;string,Function&gt;|Object.&lt;string,Array&gt;} methods List of
+ * event bindings keyed by event name containing either method names, functions or arrays containing
+ * method name or function followed by a list of arguments to be passed to callback before emitted
+ * arguments
+ * @chainable
+ */
+oo.EventEmitter.prototype.connect = function ( context, methods ) {
+	var method, callback, args, event;
+
+	for ( event in methods ) {
+		method = methods[event];
+		// Allow providing additional args
+		if ( oo.isArray( method ) ) {
+			args = method.slice( 1 );
+			method = method[0];
+		} else {
+			args = [];
+		}
+		// Allow callback to be a method name
+		if ( typeof method === &#39;string&#39; ) {
+			// Validate method
+			if ( !context[method] || typeof context[method] !== &#39;function&#39; ) {
+				throw new Error( &#39;Method not found: &#39; + method );
+			}
+			// Resolve to function
+			callback = context[method];
+		} else {
+			callback = method;
+		}
+		// Add binding
+		this.on.apply( this, [ event, callback, args, context ] );
+	}
+	return this;
+};
+
+<span id='oo-EventEmitter-method-disconnect'>/**
+</span> * Disconnect event handlers from an object.
+ *
+ * @method
+ * @param {Object} context Object to disconnect methods from
+ * @param {Object.&lt;string,string&gt;|Object.&lt;string,Function&gt;|Object.&lt;string,Array&gt;} [methods] List of
+ * event bindings keyed by event name containing either method names or functions
+ * @chainable
+ */
+oo.EventEmitter.prototype.disconnect = function ( context, methods ) {
+	var i, method, callback, event, bindings;
+
+	if ( methods ) {
+		for ( event in methods ) {
+			method = methods[event];
+			if ( typeof method === &#39;string&#39; ) {
+				// Validate method
+				if ( !context[method] || typeof context[method] !== &#39;function&#39; ) {
+					throw new Error( &#39;Method not found: &#39; + method );
+				}
+				// Resolve to function
+				callback = context[method];
+			} else {
+				callback = method;
+			}
+			bindings = this.bindings[event];
+			i = bindings.length;
+			while ( i-- ) {
+				if ( bindings[i].context === context &amp;&amp; bindings[i].callback === callback ) {
+					bindings.splice( i, 1 );
+				}
+			}
+			if ( bindings.length === 0 ) {
+				delete this.bindings[event];
+			}
+		}
+	} else {
+		for ( event in this.bindings ) {
+			bindings = this.bindings[event];
+			i = bindings.length;
+			while ( i-- ) {
+				if ( bindings[i].context === context ) {
+					bindings.splice( i, 1 );
+				}
+			}
+			if ( bindings.length === 0 ) {
+				delete this.bindings[event];
+			}
+		}
+	}
+
+	return this;
+};
+
+<span id='oo-EventEmitter-method-once'>/**
+</span> * Adds a one-time listener to a specific event.
+ *
+ * @method
+ * @param {string} event Type of event to listen to
+ * @param {Function} listener Listener to call when event occurs
+ * @chainable
+ */
+oo.EventEmitter.prototype.once = function ( event, listener ) {
+	var eventEmitter = this;
+	return this.on( event, function listenerWrapper() {
+		eventEmitter.off( event, listenerWrapper );
+		listener.apply( eventEmitter, Array.prototype.slice.call( arguments, 0 ) );
+	} );
+};
+</pre>
+</body>
+</html>
