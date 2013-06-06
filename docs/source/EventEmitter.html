@@ -15,10 +15,10 @@
   </script>
 </head>
 <body onload="prettyPrint(); highlight();">
-  <pre class="prettyprint lang-js"><span id='oo-EventEmitter-method-constructor'><span id='oo-EventEmitter'>/**
+  <pre class="prettyprint lang-js"><span id='OO-EventEmitter-method-constructor'><span id='OO-EventEmitter'>/**
 </span></span> * Event emitter.
  *
- * @class
+ * @class OO.EventEmitter
  * @constructor
  * @property {Object} bindings
  */
@@ -29,34 +29,7 @@ oo.EventEmitter = function OoEventEmitter() {
 
 /* Methods */
 
-<span id='oo-EventEmitter-method-emit'>/**
-</span> * Emit an event.
- *
- * @method
- * @param {string} event Type of event
- * @param {Mixed} args First in a list of variadic arguments passed to event handler (optional)
- * @returns {boolean} If event was handled by at least one listener
- */
-oo.EventEmitter.prototype.emit = function ( event ) {
-	var i, len, binding, bindings, args;
-
-	if ( event in this.bindings ) {
-		// Slicing ensures that we don&#39;t get tripped up by event handlers that add/remove bindings
-		bindings = this.bindings[event].slice();
-		args = Array.prototype.slice.call( arguments, 1 );
-		for ( i = 0, len = bindings.length; i &lt; len; i++ ) {
-			binding = bindings[i];
-			binding.callback.apply(
-				binding.context,
-				binding.args ? binding.args.concat( args ) : args
-			);
-		}
-		return true;
-	}
-	return false;
-};
-
-<span id='oo-EventEmitter-method-on'>/**
+<span id='OO-EventEmitter-method-on'>/**
 </span> * Add a listener to events of a specific event.
  *
  * @method
@@ -87,7 +60,23 @@ oo.EventEmitter.prototype.on = function ( event, callback, args, context ) {
 	return this;
 };
 
-<span id='oo-EventEmitter-method-off'>/**
+<span id='OO-EventEmitter-method-once'>/**
+</span> * Adds a one-time listener to a specific event.
+ *
+ * @method
+ * @param {string} event Type of event to listen to
+ * @param {Function} listener Listener to call when event occurs
+ * @chainable
+ */
+oo.EventEmitter.prototype.once = function ( event, listener ) {
+	var eventEmitter = this;
+	return this.on( event, function listenerWrapper() {
+		eventEmitter.off( event, listenerWrapper );
+		listener.apply( eventEmitter, Array.prototype.slice.call( arguments, 0 ) );
+	} );
+};
+
+<span id='OO-EventEmitter-method-off'>/**
 </span> * Remove a specific listener from a specific event.
  *
  * @method
@@ -128,7 +117,36 @@ oo.EventEmitter.prototype.off = function ( event, callback ) {
 	return this;
 };
 
-<span id='oo-EventEmitter-method-connect'>/**
+<span id='OO-EventEmitter-method-emit'>/**
+</span> * Emit an event.
+ * TODO: Should this be chainable? What is the usefulness of the boolean
+ * return value here?
+ *
+ * @method
+ * @param {string} event Type of event
+ * @param {Mixed} args First in a list of variadic arguments passed to event handler (optional)
+ * @returns {boolean} If event was handled by at least one listener
+ */
+oo.EventEmitter.prototype.emit = function ( event ) {
+	var i, len, binding, bindings, args;
+
+	if ( event in this.bindings ) {
+		// Slicing ensures that we don&#39;t get tripped up by event handlers that add/remove bindings
+		bindings = this.bindings[event].slice();
+		args = Array.prototype.slice.call( arguments, 1 );
+		for ( i = 0, len = bindings.length; i &lt; len; i++ ) {
+			binding = bindings[i];
+			binding.callback.apply(
+				binding.context,
+				binding.args ? binding.args.concat( args ) : args
+			);
+		}
+		return true;
+	}
+	return false;
+};
+
+<span id='OO-EventEmitter-method-connect'>/**
 </span> * Connect event handlers to an object.
  *
  * @method
@@ -145,7 +163,7 @@ oo.EventEmitter.prototype.connect = function ( context, methods ) {
 	for ( event in methods ) {
 		method = methods[event];
 		// Allow providing additional args
-		if ( oo.isArray( method ) ) {
+		if ( Array.isArray( method ) ) {
 			args = method.slice( 1 );
 			method = method[0];
 		} else {
@@ -168,7 +186,7 @@ oo.EventEmitter.prototype.connect = function ( context, methods ) {
 	return this;
 };
 
-<span id='oo-EventEmitter-method-disconnect'>/**
+<span id='OO-EventEmitter-method-disconnect'>/**
 </span> * Disconnect event handlers from an object.
  *
  * @method
@@ -220,22 +238,6 @@ oo.EventEmitter.prototype.disconnect = function ( context, methods ) {
 	}
 
 	return this;
-};
-
-<span id='oo-EventEmitter-method-once'>/**
-</span> * Adds a one-time listener to a specific event.
- *
- * @method
- * @param {string} event Type of event to listen to
- * @param {Function} listener Listener to call when event occurs
- * @chainable
- */
-oo.EventEmitter.prototype.once = function ( event, listener ) {
-	var eventEmitter = this;
-	return this.on( event, function listenerWrapper() {
-		eventEmitter.off( event, listenerWrapper );
-		listener.apply( eventEmitter, Array.prototype.slice.call( arguments, 0 ) );
-	} );
 };
 </pre>
 </body>

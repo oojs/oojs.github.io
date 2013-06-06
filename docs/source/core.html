@@ -16,18 +16,48 @@
 </head>
 <body onload="prettyPrint(); highlight();">
   <pre class="prettyprint lang-js">var
-<span id='oo'>	/**
+<span id='OO'>	/**
 </span>	 * Namespace for all classes, static methods and static properties.
-	 * @class oo
+	 * @class OO
 	 * @singleton
 	 */
 	oo = {},
-	hasOwn = Object.prototype.hasOwnProperty;
+	hasOwn = oo.hasOwnProperty,
+	toString = oo.toString;
 
 /* Class Methods */
 
-<span id='oo-method-inheritClass'>/**
-</span> * Utility for common usage of #createObject for inheriting from one
+
+<span id='OO-method-isPlainObject'>/**
+</span> * Assert whether a value is a plain object or not.
+ *
+ * @method
+ * @param {Mixed} obj
+ * @return {boolean}
+ */
+oo.isPlainObject = function ( obj ) {
+	// Any object or value whose internal [[Class]] property is not &quot;[object Object]&quot;
+	if ( toString.call( obj ) !== &#39;[object Object]&#39; ) {
+		return false;
+	}
+
+	// The try/catch suppresses exceptions thrown when attempting to access
+	// the &quot;constructor&quot; property of certain host objects suich as window.location
+	// in Firefox &lt; 20 (https://bugzilla.mozilla.org/814622)
+	try {
+		if ( obj.constructor &amp;&amp;
+				!hasOwn.call( obj.constructor.prototype, &#39;isPrototypeOf&#39; ) ) {
+			return false;
+		}
+	} catch ( e ) {
+		return false;
+	}
+
+	return true;
+};
+
+<span id='OO-method-inheritClass'>/**
+</span> * Utility for common usage of Object#create for inheriting from one
  * prototype to another.
  *
  * Beware: This redefines the prototype, call before setting your prototypes.
@@ -66,24 +96,22 @@ oo.inheritClass = function ( targetFn, originFn ) {
 		throw new Error( &#39;Target already inherits from origin&#39; );
 	}
 
-	// Doesn&#39;t really require ES5 (jshint/jshint#74@github)
-	/*jshint es5: true */
 	var targetConstructor = targetFn.prototype.constructor;
 
-	targetFn.prototype = oo.createObject( originFn.prototype );
+	targetFn.prototype = Object.create( originFn.prototype );
 
 	// Restore constructor property of targetFn
 	targetFn.prototype.constructor = targetConstructor;
 
 	// Extend static properties - always initialize both sides
 	originFn.static = originFn.static || {};
-	targetFn.static = oo.createObject( originFn.static );
+	targetFn.static = Object.create( originFn.static );
 
 	// Copy mixin tracking
 	targetFn.mixins = originFn.mixins ? originFn.mixins.slice( 0 ) : [];
 };
 
-<span id='oo-method-mixinClass'>/**
+<span id='OO-method-mixinClass'>/**
 </span> * Utility to copy over *own* prototype properties of a mixin.
  * The &#39;constructor&#39; (whether implicit or explicit) is not copied over.
  *
@@ -138,16 +166,7 @@ oo.mixinClass = function ( targetFn, originFn ) {
 
 /* Object Methods */
 
-<span id='oo-method-createObject'>/**
-</span> * Create an object that inherits from another object.
- *
- * @method
- * @param {Object} origin Object to inherit from
- * @return {Object} Empty object that inherits from origin
- */
-oo.createObject = Object.create;
-
-<span id='oo-method-cloneObject'>/**
+<span id='OO-method-cloneObject'>/**
 </span> * Create a new object that is an instance of the same
  * constructor as the input, inherits from the same object
  * and contains the same own properties.
@@ -173,7 +192,7 @@ oo.createObject = Object.create;
 oo.cloneObject = function ( origin ) {
 	var key, r;
 
-	r = oo.createObject( origin.constructor.prototype );
+	r = Object.create( origin.constructor.prototype );
 
 	for ( key in origin ) {
 		if ( hasOwn.call( origin, key ) ) {
@@ -184,7 +203,7 @@ oo.cloneObject = function ( origin ) {
 	return r;
 };
 
-<span id='oo-method-getObjectValues'>/**
+<span id='OO-method-getObjectValues'>/**
 </span> * Gets an array of all property values in an object.
  *
  * @method
@@ -208,8 +227,8 @@ oo.getObjectValues = function ( obj ) {
 	return values;
 };
 
-<span id='oo-method-compareObjects'>/**
-</span> * Recursively compares string and number property between two objects.
+<span id='OO-method-compare'>/**
+</span> * Recursively compares properties between two objects.
  *
  * A false result may be caused by property inequality or by properties in one object missing from
  * the other. An asymmetrical test may also be performed, which checks only that properties in the
@@ -221,7 +240,7 @@ oo.getObjectValues = function ( obj ) {
  * @param {boolean} [asymmetrical] Whether to check only that b contains values from a
  * @returns {boolean} If the objects contain the same values as each other
  */
-oo.compareObjects = function ( a, b, asymmetrical ) {
+oo.compare = function ( a, b, asymmetrical ) {
 	var aValue, bValue, aType, bType, k;
 	for ( k in a ) {
 		aValue = a[k];
@@ -230,15 +249,15 @@ oo.compareObjects = function ( a, b, asymmetrical ) {
 		bType = typeof bValue;
 		if ( aType !== bType ||
 			( ( aType === &#39;string&#39; || aType === &#39;number&#39; ) &amp;&amp; aValue !== bValue ) ||
-			( aValue === Object( aValue ) &amp;&amp; !oo.compareObjects( aValue, bValue ) ) ) {
+			( aValue === Object( aValue ) &amp;&amp; !oo.compare( aValue, bValue, asymmetrical ) ) ) {
 			return false;
 		}
 	}
 	// If the check is not asymmetrical, recursing with the arguments swapped will verify our result
-	return asymmetrical ? true : oo.compareObjects( b, a, true );
+	return asymmetrical ? true : oo.compare( b, a, true );
 };
 
-<span id='oo-method-copy'>/**
+<span id='OO-method-copy'>/**
 </span> * Create a plain deep copy of any kind of object.
  *
  * Copies are deep, and will either be an object or an array depending on `source`.
@@ -271,11 +290,11 @@ oo.copy = function ( source, callback ) {
 			// DOM Node
 			destination[key] = callback ?
 				callback( sourceValue.cloneNode( true ) ) : sourceValue.cloneNode( true );
-		} else if ( sourceValue === Object( sourceValue ) &amp;&amp; typeof sourceValue !== &#39;function&#39; ) {
-			// Other objects, except for functions that we cannot clone
+		} else if ( oo.isPlainObject( sourceValue ) ) {
+			// Plain objects
 			destination[key] = oo.copy( sourceValue, callback );
 		} else {
-			// Primitive values and functions
+			// Non-plain objects (incl. functions) and primitive values
 			destination[key] = callback ? callback( sourceValue ) : sourceValue;
 		}
 	}
