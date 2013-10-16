@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>The source code</title>
+  <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+  <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+  <style type="text/css">
+    .highlight { display: block; background-color: #ddd; }
+  </style>
+  <script type="text/javascript">
+    function highlight() {
+      document.getElementById(location.hash.replace(/#/, "")).className = "highlight";
+    }
+  </script>
+</head>
+<body onload="prettyPrint(); highlight();">
+  <pre class="prettyprint lang-js"><span id='OO-Factory-method-constructor'><span id='OO-Factory'>/**
+</span></span> * Object factory.
+ *
+ * @class OO.Factory
+ * @extends OO.Registry
+ *
+ * @constructor
+ */
+oo.Factory = function OoFactory() {
+	// Parent constructor
+	oo.Registry.call( this );
+
+	// Properties
+	this.entries = [];
+};
+
+/* Inheritance */
+
+oo.inheritClass( oo.Factory, oo.Registry );
+
+/* Methods */
+
+<span id='OO-Factory-method-register'>/**
+</span> * Register a constructor with the factory.
+ *
+ * Classes must have a static `name` property to be registered.
+ *
+ *     @example
+ *     function MyClass() {};
+ *     // Adds a static property to the class defining a symbolic name
+ *     MyClass.static = { &#39;name&#39;: &#39;mine&#39; };
+ *     // Registers class with factory, available via symbolic name &#39;mine&#39;
+ *     factory.register( MyClass );
+ *
+ * @method
+ * @param {Function} constructor Constructor to use when creating object
+ * @throws {Error} Name must be a string and must not be empty
+ * @throws {Error} Constructor must be a function
+ */
+oo.Factory.prototype.register = function ( constructor ) {
+	var name;
+
+	if ( typeof constructor !== &#39;function&#39; ) {
+		throw new Error( &#39;constructor must be a function, cannot be a &#39; + typeof constructor );
+	}
+	name = constructor.static &amp;&amp; constructor.static.name;
+	if ( typeof name !== &#39;string&#39; || name === &#39;&#39; ) {
+		throw new Error( &#39;Name must be a string and must not be empty&#39; );
+	}
+	this.entries.push( name );
+	oo.Registry.prototype.register.call( this, name, constructor );
+};
+
+<span id='OO-Factory-method-create'>/**
+</span> * Create an object based on a name.
+ *
+ * Name is used to look up the constructor to use, while all additional arguments are passed to the
+ * constructor directly, so leaving one out will pass an undefined to the constructor.
+ *
+ * @method
+ * @param {string} name Object name
+ * @param {Mixed...} [args] Arguments to pass to the constructor
+ * @returns {Object} The new object
+ * @throws {Error} Unknown object name
+ */
+oo.Factory.prototype.create = function ( name ) {
+	var args, obj, constructor;
+
+	if ( !this.registry.hasOwnProperty( name ) ) {
+		throw new Error( &#39;No class registered by that name: &#39; + name );
+	}
+	constructor = this.registry[name];
+
+	// Convert arguments to array and shift the first argument (name) off
+	args = Array.prototype.slice.call( arguments, 1 );
+
+	// We can&#39;t use the &quot;new&quot; operator with .apply directly because apply needs a
+	// context. So instead just do what &quot;new&quot; does: create an object that inherits from
+	// the constructor&#39;s prototype (which also makes it an &quot;instanceof&quot; the constructor),
+	// then invoke the constructor with the object as context, and return it (ignoring
+	// the constructor&#39;s return value).
+	obj = Object.create( constructor.prototype );
+	constructor.apply( obj, args );
+	return obj;
+};
+</pre>
+</body>
+</html>

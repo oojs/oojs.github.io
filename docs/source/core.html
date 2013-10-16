@@ -98,17 +98,19 @@ oo.inheritClass = function ( targetFn, originFn ) {
 
 	var targetConstructor = targetFn.prototype.constructor;
 
-	targetFn.prototype = Object.create( originFn.prototype );
-
-	// Restore constructor property of targetFn
-	targetFn.prototype.constructor = targetConstructor;
+	targetFn.prototype = Object.create( originFn.prototype, {
+		// Restore constructor property of targetFn
+		constructor: {
+			value: targetConstructor,
+			enumerable: false,
+			writable: true,
+			configurable: true
+		}
+	} );
 
 	// Extend static properties - always initialize both sides
 	originFn.static = originFn.static || {};
 	targetFn.static = Object.create( originFn.static );
-
-	// Copy mixin tracking
-	targetFn.mixins = originFn.mixins ? originFn.mixins.slice( 0 ) : [];
 };
 
 <span id='OO-method-mixinClass'>/**
@@ -242,6 +244,11 @@ oo.getObjectValues = function ( obj ) {
  */
 oo.compare = function ( a, b, asymmetrical ) {
 	var aValue, bValue, aType, bType, k;
+
+	if ( a === b ) {
+		return true;
+	}
+
 	for ( k in a ) {
 		aValue = a[k];
 		bValue = b[k];
@@ -300,6 +307,59 @@ oo.copy = function ( source, callback ) {
 	}
 
 	return destination;
+};
+
+<span id='OO-method-getHash'>/**
+</span> * Generates a hash of an object based on its name and data.
+ * Performance optimization: http://jsperf.com/ve-gethash-201208#/toJson_fnReplacerIfAoForElse
+ *
+ * To avoid two objects with the same values generating different hashes, we utilize the replacer
+ * argument of JSON.stringify and sort the object by key as it&#39;s being serialized. This may or may
+ * not be the fastest way to do this; we should investigate this further.
+ *
+ * Objects and arrays are hashed recursively. When hashing an object that has a .getHash()
+ * function, we call that function and use its return value rather than hashing the object
+ * ourselves. This allows classes to define custom hashing.
+ *
+ * @param {Object} val Object to generate hash for
+ * @returns {string} Hash of object
+ */
+oo.getHash = function ( val ) {
+	return JSON.stringify( val, oo.getHash.keySortReplacer );
+};
+
+<span id='OO-method-keySortReplacer'>/**
+</span> * Helper function for oo.getHash which sorts objects by key.
+ *
+ * This is a callback passed into JSON.stringify.
+ *
+ * @param {string} key Property name of value being replaced
+ * @param {Mixed} val Property value to replace
+ * @returns {Mixed} Replacement value
+ */
+oo.getHash.keySortReplacer = function ( key, val ) {
+	var normalized, keys, i, len;
+	if ( val &amp;&amp; typeof val.getHashObject === &#39;function&#39; ) {
+		// This object has its own custom hash function, use it
+		val = val.getHashObject();
+	}
+	if ( !Array.isArray( val ) &amp;&amp; Object( val ) === val ) {
+		// Only normalize objects when the key-order is ambiguous
+		// (e.g. any object not an array).
+		normalized = {};
+		keys = Object.keys( val ).sort();
+		i = 0;
+		len = keys.length;
+		for ( ; i &lt; len; i += 1 ) {
+			normalized[keys[i]] = val[keys[i]];
+		}
+		return normalized;
+
+	// Primitive values and arrays get stable hashes
+	// by default. Lets those be stringified as-is.
+	} else {
+		return val;
+	}
 };
 </pre>
 </body>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>The source code</title>
+  <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+  <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+  <style type="text/css">
+    .highlight { display: block; background-color: #ddd; }
+  </style>
+  <script type="text/javascript">
+    function highlight() {
+      document.getElementById(location.hash.replace(/#/, "")).className = "highlight";
+    }
+  </script>
+</head>
+<body onload="prettyPrint(); highlight();">
+  <pre class="prettyprint lang-js"><span id='OO-Registry-method-constructor'><span id='OO-Registry'>/**
+</span></span> * Data registry.
+ *
+ * @class OO.Registry
+ * @mixins OO.EventEmitter
+ *
+ * @constructor
+ */
+oo.Registry = function OoRegistry() {
+	// Mixin constructors
+	oo.EventEmitter.call( this );
+
+	// Properties
+	this.registry = {};
+};
+
+/* Inheritance */
+
+oo.mixinClass( oo.Registry, oo.EventEmitter );
+
+/* Events */
+
+<span id='OO-Registry-event-register'>/**
+</span> * @event register
+ * @param {string} name
+ * @param {Mixed} data
+ */
+
+/* Methods */
+
+<span id='OO-Registry-method-register'>/**
+</span> * Associate one or more symbolic names with some data.
+ *
+ * Only the base name will be registered, overriding any existing entry with the same base name.
+ *
+ * @method
+ * @param {string|string[]} name Symbolic name or list of symbolic names
+ * @param {Mixed} data Data to associate with symbolic name
+ * @fires register
+ * @throws {Error} Name argument must be a string or array
+ */
+oo.Registry.prototype.register = function ( name, data ) {
+	if ( typeof name !== &#39;string&#39; &amp;&amp; !Array.isArray( name ) ) {
+		throw new Error( &#39;Name argument must be a string or array, cannot be a &#39; + typeof name );
+	}
+	var i, len;
+	if ( Array.isArray( name ) ) {
+		for ( i = 0, len = name.length; i &lt; len; i++ ) {
+			this.register( name[i], data );
+		}
+	} else if ( typeof name === &#39;string&#39; ) {
+		this.registry[name] = data;
+		this.emit( &#39;register&#39;, name, data );
+	} else {
+		throw new Error( &#39;Name must be a string or array of strings, cannot be a &#39; + typeof name );
+	}
+};
+
+<span id='OO-Registry-method-lookup'>/**
+</span> * Gets data for a given symbolic name.
+ *
+ * Lookups are done using the base name.
+ *
+ * @method
+ * @param {string} name Symbolic name
+ * @returns {Mixed|undefined} Data associated with symbolic name
+ */
+oo.Registry.prototype.lookup = function ( name ) {
+	return this.registry[name];
+};
+</pre>
+</body>
+</html>
