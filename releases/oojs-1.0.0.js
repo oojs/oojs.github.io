@@ -1,12 +1,12 @@
 /*!
- * Object Oriented JavaScript Library v1.0.2
+ * Object Oriented JavaScript Library v1.0.0
  * https://github.com/trevorparscal/oojs
  *
- * Copyright 2011-2013 OOJS Team and other contributors.
+ * Copyright 2011-2013 Timo Tijhof, Trevor Parscal and Roan Kattouw.
  * Released under the MIT license
  * http://oojs.mit-license.org
  *
- * Date: Thu Jul 25 2013 04:30:26 GMT+0200 (CEST)
+ * Date: Thu Jun 06 2013 03:49:52 GMT+0200 (CEST)
  */
 ( function ( global ) {
 
@@ -94,15 +94,10 @@ oo.inheritClass = function ( targetFn, originFn ) {
 
 	var targetConstructor = targetFn.prototype.constructor;
 
-	targetFn.prototype = Object.create( originFn.prototype, {
-		// Restore constructor property of targetFn
-		constructor: {
-			value: targetConstructor,
-			enumerable: false,
-			writable: true,
-			configurable: true
-		}
-	} );
+	targetFn.prototype = Object.create( originFn.prototype );
+
+	// Restore constructor property of targetFn
+	targetFn.prototype.constructor = targetConstructor;
 
 	// Extend static properties - always initialize both sides
 	originFn.static = originFn.static || {};
@@ -243,11 +238,6 @@ oo.getObjectValues = function ( obj ) {
  */
 oo.compare = function ( a, b, asymmetrical ) {
 	var aValue, bValue, aType, bType, k;
-
-	if ( a === b ) {
-		return true;
-	}
-
 	for ( k in a ) {
 		aValue = a[k];
 		bValue = b[k];

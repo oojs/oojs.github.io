@@ -1,12 +1,12 @@
 /*!
- * Object Oriented JavaScript Library v1.0.2
+ * Object Oriented JavaScript Library v0.1.0
  * https://github.com/trevorparscal/oojs
  *
- * Copyright 2011-2013 OOJS Team and other contributors.
+ * Copyright 2011-2013 Timo Tijhof, Trevor Parscal and Roan Kattouw.
  * Released under the MIT license
  * http://oojs.mit-license.org
  *
- * Date: Thu Jul 25 2013 04:30:26 GMT+0200 (CEST)
+ * Date: Thu Jun 06 2013 00:56:48 GMT+0200 (CEST)
  */
 ( function ( global ) {
 
@@ -14,46 +14,16 @@
 var
 	/**
 	 * Namespace for all classes, static methods and static properties.
-	 * @class OO
+	 * @class oo
 	 * @singleton
 	 */
 	oo = {},
-	hasOwn = oo.hasOwnProperty,
-	toString = oo.toString;
+	hasOwn = Object.prototype.hasOwnProperty;
 
 /* Class Methods */
 
-
 /**
- * Assert whether a value is a plain object or not.
- *
- * @method
- * @param {Mixed} obj
- * @return {boolean}
- */
-oo.isPlainObject = function ( obj ) {
-	// Any object or value whose internal [[Class]] property is not "[object Object]"
-	if ( toString.call( obj ) !== '[object Object]' ) {
-		return false;
-	}
-
-	// The try/catch suppresses exceptions thrown when attempting to access
-	// the "constructor" property of certain host objects suich as window.location
-	// in Firefox < 20 (https://bugzilla.mozilla.org/814622)
-	try {
-		if ( obj.constructor &&
-				!hasOwn.call( obj.constructor.prototype, 'isPrototypeOf' ) ) {
-			return false;
-		}
-	} catch ( e ) {
-		return false;
-	}
-
-	return true;
-};
-
-/**
- * Utility for common usage of Object#create for inheriting from one
+ * Utility for common usage of #createObject for inheriting from one
  * prototype to another.
  *
  * Beware: This redefines the prototype, call before setting your prototypes.
@@ -94,19 +64,14 @@ oo.inheritClass = function ( targetFn, originFn ) {
 
 	var targetConstructor = targetFn.prototype.constructor;
 
-	targetFn.prototype = Object.create( originFn.prototype, {
-		// Restore constructor property of targetFn
-		constructor: {
-			value: targetConstructor,
-			enumerable: false,
-			writable: true,
-			configurable: true
-		}
-	} );
+	targetFn.prototype = oo.createObject( originFn.prototype );
+
+	// Restore constructor property of targetFn
+	targetFn.prototype.constructor = targetConstructor;
 
 	// Extend static properties - always initialize both sides
 	originFn.static = originFn.static || {};
-	targetFn.static = Object.create( originFn.static );
+	targetFn.static = oo.createObject( originFn.static );
 
 	// Copy mixin tracking
 	targetFn.mixins = originFn.mixins ? originFn.mixins.slice( 0 ) : [];
@@ -168,6 +133,15 @@ oo.mixinClass = function ( targetFn, originFn ) {
 /* Object Methods */
 
 /**
+ * Create an object that inherits from another object.
+ *
+ * @method
+ * @param {Object} origin Object to inherit from
+ * @return {Object} Empty object that inherits from origin
+ */
+oo.createObject = Object.create;
+
+/**
  * Create a new object that is an instance of the same
  * constructor as the input, inherits from the same object
  * and contains the same own properties.
@@ -193,7 +167,7 @@ oo.mixinClass = function ( targetFn, originFn ) {
 oo.cloneObject = function ( origin ) {
 	var key, r;
 
-	r = Object.create( origin.constructor.prototype );
+	r = oo.createObject( origin.constructor.prototype );
 
 	for ( key in origin ) {
 		if ( hasOwn.call( origin, key ) ) {
@@ -229,7 +203,7 @@ oo.getObjectValues = function ( obj ) {
 };
 
 /**
- * Recursively compares properties between two objects.
+ * Recursively compares string and number property between two objects.
  *
  * A false result may be caused by property inequality or by properties in one object missing from
  * the other. An asymmetrical test may also be performed, which checks only that properties in the
@@ -241,13 +215,8 @@ oo.getObjectValues = function ( obj ) {
  * @param {boolean} [asymmetrical] Whether to check only that b contains values from a
  * @returns {boolean} If the objects contain the same values as each other
  */
-oo.compare = function ( a, b, asymmetrical ) {
+oo.compareObjects = function ( a, b, asymmetrical ) {
 	var aValue, bValue, aType, bType, k;
-
-	if ( a === b ) {
-		return true;
-	}
-
 	for ( k in a ) {
 		aValue = a[k];
 		bValue = b[k];
@@ -255,12 +224,12 @@ oo.compare = function ( a, b, asymmetrical ) {
 		bType = typeof bValue;
 		if ( aType !== bType ||
 			( ( aType === 'string' || aType === 'number' ) && aValue !== bValue ) ||
-			( aValue === Object( aValue ) && !oo.compare( aValue, bValue, asymmetrical ) ) ) {
+			( aValue === Object( aValue ) && !oo.compareObjects( aValue, bValue ) ) ) {
 			return false;
 		}
 	}
 	// If the check is not asymmetrical, recursing with the arguments swapped will verify our result
-	return asymmetrical ? true : oo.compare( b, a, true );
+	return asymmetrical ? true : oo.compareObjects( b, a, true );
 };
 
 /**
@@ -296,11 +265,11 @@ oo.copy = function ( source, callback ) {
 			// DOM Node
 			destination[key] = callback ?
 				callback( sourceValue.cloneNode( true ) ) : sourceValue.cloneNode( true );
-		} else if ( oo.isPlainObject( sourceValue ) ) {
-			// Plain objects
+		} else if ( sourceValue === Object( sourceValue ) && typeof sourceValue !== 'function' ) {
+			// Other objects, except for functions that we cannot clone
 			destination[key] = oo.copy( sourceValue, callback );
 		} else {
-			// Non-plain objects (incl. functions) and primitive values
+			// Primitive values and functions
 			destination[key] = callback ? callback( sourceValue ) : sourceValue;
 		}
 	}
@@ -310,7 +279,7 @@ oo.copy = function ( source, callback ) {
 /**
  * Event emitter.
  *
- * @class OO.EventEmitter
+ * @class
  * @constructor
  * @property {Object} bindings
  */

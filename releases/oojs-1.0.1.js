@@ -6,7 +6,7 @@
  * Released under the MIT license
  * http://oojs.mit-license.org
  *
- * Date: Thu Jun 6 2013 17:25:24 GMT+0200 (CEST)
+ * Date: Thu Jun 06 2013 17:25:38 GMT+0200 (CEST)
  */
 ( function ( global ) {
 
