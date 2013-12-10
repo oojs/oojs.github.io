@@ -1,4 +1,4 @@
-[OOJS Documentation](http://trevorparscal.github.io/oojs/docs/)
+[OOJS Documentation](http://krinkle.github.io/oojs/docs/)
 =================
 
-Automatically published on http://trevorparscal.github.io/oojs/docs
+Automatically published on http://krinkle.github.io/oojs/docs
