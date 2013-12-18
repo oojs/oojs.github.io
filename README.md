@@ -1,4 +1,4 @@
-[OOJS Documentation](http://krinkle.github.io/oojs/docs/)
+[OOJS](http://oojs.github.io/)
 =================
 
-Automatically published on http://krinkle.github.io/oojs/docs
+Documentation and release builds.
