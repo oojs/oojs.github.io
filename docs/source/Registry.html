@@ -16,9 +16,7 @@
 </head>
 <body onload="prettyPrint(); highlight();">
   <pre class="prettyprint lang-js"><span id='OO-Registry-method-constructor'><span id='OO-Registry'>/**
-</span></span> * Data registry.
- *
- * @class OO.Registry
+</span></span> * @class OO.Registry
  * @mixins OO.EventEmitter
  *
  * @constructor
@@ -50,37 +48,32 @@ oo.mixinClass( oo.Registry, oo.EventEmitter );
  *
  * Only the base name will be registered, overriding any existing entry with the same base name.
  *
- * @method
  * @param {string|string[]} name Symbolic name or list of symbolic names
  * @param {Mixed} data Data to associate with symbolic name
  * @fires register
  * @throws {Error} Name argument must be a string or array
  */
 oo.Registry.prototype.register = function ( name, data ) {
-	if ( typeof name !== &#39;string&#39; &amp;&amp; !Array.isArray( name ) ) {
-		throw new Error( &#39;Name argument must be a string or array, cannot be a &#39; + typeof name );
-	}
 	var i, len;
-	if ( Array.isArray( name ) ) {
+	if ( typeof name === &#39;string&#39; ) {
+		this.registry[name] = data;
+		this.emit( &#39;register&#39;, name, data );
+	} else if ( Array.isArray( name ) ) {
 		for ( i = 0, len = name.length; i &lt; len; i++ ) {
 			this.register( name[i], data );
 		}
-	} else if ( typeof name === &#39;string&#39; ) {
-		this.registry[name] = data;
-		this.emit( &#39;register&#39;, name, data );
 	} else {
-		throw new Error( &#39;Name must be a string or array of strings, cannot be a &#39; + typeof name );
+		throw new Error( &#39;Name must be a string or array, cannot be a &#39; + typeof name );
 	}
 };
 
 <span id='OO-Registry-method-lookup'>/**
-</span> * Gets data for a given symbolic name.
+</span> * Get data for a given symbolic name.
  *
  * Lookups are done using the base name.
  *
- * @method
  * @param {string} name Symbolic name
- * @returns {Mixed|undefined} Data associated with symbolic name
+ * @return {Mixed|undefined} Data associated with symbolic name
  */
 oo.Registry.prototype.lookup = function ( name ) {
 	return this.registry[name];
