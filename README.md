@@ -1,4 +1,4 @@
-[OOJS](http://oojs.github.io/)
+[OOJS](https://oojs.github.io/)
 =================
 
 Documentation and release builds.
