@@ -40,8 +40,9 @@ oo.inheritClass( oo.Factory, oo.Registry );
  * Classes must have a static `name` property to be registered.
  *
  *     function MyClass() {};
+ *     OO.initClass( MyClass );
  *     // Adds a static property to the class defining a symbolic name
- *     MyClass.static = { &#39;name&#39;: &#39;mine&#39; };
+ *     MyClass.static.name = &#39;mine&#39;;
  *     // Registers class with factory, available via symbolic name &#39;mine&#39;
  *     factory.register( MyClass );
  *
